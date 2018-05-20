@@ -1,0 +1,313 @@
+<html>
+<head>
+    <script type="text/javascript" src="node_modules/vis/dist/vis.js"></script>
+    <script type="text/javascript" src="testMap.js"></script>
+    <link href="node_modules/vis/dist/vis.css" rel="stylesheet" type="text/css" />
+
+    <style type="text/css">
+        body {
+            background-color: #111111;
+        }
+        #mynetwork {
+
+        }
+        .vis-item.vis-selected {
+            border-color: #00C618;
+        }
+        #controls {
+            width: 400px;
+            height: 410px;
+            background-color: rgba(255, 255, 255, 0.2);
+            position: absolute;
+            left: 0px;
+            top: 0px;
+            color: #FFFFFF;
+            padding: 10px;
+        }
+        .controlRow {
+            height: 30px;
+            width: 400px;
+        }
+        .controlLabel {
+            width: 80px;
+            float: left;
+        }
+        .controlInput {
+            float: right;
+            width: 300px;
+        }
+        .controlRowLarge {
+            height: 60px;
+            width: 400px;
+        }
+
+    </style>
+</head>
+<body>
+<div id="mynetwork"></div>
+<div id="controls">
+    <div class="controlRow"><div class="controlLabel">ID:</div> <input class="controlInput" type="text" id="id"></div>
+    <div class="controlRow"><div class="controlLabel">Title:</div> <input class="controlInput" type="text" id="title"></div>
+    <div class="controlRow"><div class="controlLabel">Year:</div> <input class="controlInput" type="text" id="year"></div>
+    <div class="controlRow"><div class="controlLabel">Authors:</div> <input class="controlInput" type="text" id="authors"></div>
+    <div class="controlRowLarge"><div class="controlLabel">Notes:</div> <textarea class="controlInput" id="notes" rows=3></textarea></div>
+    <div class="controlRowLarge"><div class="controlLabel">Quotes:</div> <textarea class="controlInput" id="quotes" rows=3></textarea></div>
+    <div class="controlRow"><div class="controlLabel">Read?:</div> <input class="controlInput" type="checkbox" id="read"></div>
+    <div class="controlRow"><button type="button" style="width:400px" onclick="saveNode()">Add / Save Paper</button></div>
+    <div class="controlRow"></div>
+    <div class="controlRow"><button type="button" style="width:400px" onclick="downloadJSON()">Download Map</button></div>
+    <div class="controlRow"><input type="file" id="selectFiles""></input><button type="button" class="controlInput" style="width:130px" onclick="uploadJSON()">Import Map</button></div>
+    <div class="controlRow"><button type="button" style="width:400px" onclick="loadTestMap()">Load Test Map</button></div>
+</div>
+
+<script type="text/javascript">
+    var papers = new vis.DataSet([]);
+    var refs = new vis.DataSet([]);
+    var currentSelectedNode = "";
+    var network;
+    var map = {};
+    map.papers = [];
+    map.refs = [];
+
+    loadNetwork();
+
+    function selectNode(params) {
+        paperID = params.nodes[0];
+        if (params.event.srcEvent.ctrlKey && currentSelectedNode != "") {
+            refs.add({id: currentSelectedNode + "_" + paperID, from: currentSelectedNode, to: paperID, arrows:'to'});
+            map.refs.push({id: currentSelectedNode + "_" + paperID, from: currentSelectedNode, to: paperID});
+        }
+        paperID = params.nodes[0];
+        var index = map.papers.findIndex(function(item, i){
+            return item.id === paperID;
+        });
+        var paperToEdit = map.papers[index];
+        document.getElementById("id").value = paperToEdit.id;
+        document.getElementById("title").value = paperToEdit.title;
+        document.getElementById("year").value = paperToEdit.year;
+        document.getElementById("authors").value = paperToEdit.authors;
+        document.getElementById("notes").value = paperToEdit.notes;
+        document.getElementById("quotes").value = "";
+        for (quoteIndex in paperToEdit.quotes) {
+            document.getElementById("quotes").value += paperToEdit.quotes[quoteIndex].quote + "\n";
+        }
+        document.getElementById("read").checked = paperToEdit.read;
+        currentSelectedNode = paperID;
+    }
+
+    function saveNode() {
+        paperJSON = {};
+        paperJSON.title = document.getElementById("title").value;
+        paperJSON.year = document.getElementById("year").value;
+        paperJSON.authors = document.getElementById("authors").value;
+        paperJSON.notes = document.getElementById("notes").value;
+        paperJSON.quotes = [];
+        var quotes = document.getElementById("quotes").value.split("\n");
+        for (quoteIndex in quotes) {
+            if (quotes[quoteIndex] != "") {
+                paperJSON.quotes.push({quote: quotes[quoteIndex]});
+            }
+        }
+        paperJSON.read = document.getElementById("read").checked;
+
+        if (network.getSelectedNodes().length == 0) {
+            // Adding new paper
+            console.log("Adding new paper");
+            paperJSON.id = document.getElementById("id").value;
+            map.papers.push(paperJSON);
+            addPaperToNetwork(paperJSON);
+            clearControls();
+        } else {
+            // Editing existing paper
+            console.log("Editing paper");
+            paperJSON.id = network.getSelectedNodes()[0];
+            var groupType = "papers"
+            if (paperJSON.read == false) {
+                groupType += "_unread"
+            }
+            papers.update({id: paperJSON.id, label: makeLabel(paperJSON), group: groupType});
+
+            var index = map.papers.findIndex(function(item, i){
+                return item.id === paperJSON.id;
+            });
+            map.papers.splice(index, 1, paperJSON);
+        }
+    }
+
+    function deleteSelectedFeature() {
+        selectedPapers = network.getSelectedNodes();
+        selectedRefs = network.getSelectedEdges();
+
+        for (paperIndex in selectedPapers) {
+            var index = map.papers.findIndex(function(item, i){
+                return item.id === selectedPapers[paperIndex];
+            });
+            map.papers.splice(index, 1);
+        }
+
+        for (refIndex in selectedRefs) {
+            var index = map.refs.findIndex(function(item, i){
+                return item.id === selectedRefs[refIndex];
+            });
+            map.refs.splice(index, 1);
+        }
+        network.deleteSelected();
+        clearControls();
+    }
+
+    function clearControls() {
+        document.getElementById("id").value = ""
+        document.getElementById("title").value = ""
+        document.getElementById("year").value = ""
+        document.getElementById("authors").value = ""
+        document.getElementById("notes").value = ""
+        document.getElementById("quotes").value = "";
+        document.getElementById("read").checked = false;
+    }
+
+    function makeLabel(paper) {
+        var labelString = "*" + paper.title + "*\n" + paper.year + "\n_" + paper.authors + "_\n" + paper.notes;
+        for (quoteIndex in paper.quotes) {
+            labelString += "\n`\"" + paper.quotes[quoteIndex].quote + "\"`";
+        }
+        return labelString;
+    }
+
+    function addPaperToNetwork(paper) {
+        var labelString = makeLabel(paper);
+        var groupType = "papers"
+        if (paper.read == false) {
+            groupType += "_unread"
+        }
+        var nodeJSON = {id: paper.id, label: labelString, group: groupType};
+        papers.add(nodeJSON);
+    }
+
+    function downloadJSON() {
+        console.log("Download");
+        var element = document.createElement('a');
+        element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(JSON.stringify(map, null, 4)));
+        element.setAttribute('download', 'map.txt');
+
+        element.style.display = 'none';
+        document.body.appendChild(element);
+
+        element.click();
+
+        document.body.removeChild(element);
+    }
+
+    function uploadJSON() {
+        console.log("Ulpoad");
+        var files = document.getElementById('selectFiles').files;
+        console.log(files);
+        if (files.length <= 0) {
+            return false;
+        }
+
+        var fr = new FileReader();
+
+        fr.onload = function(e) {
+            console.log(e);
+            map = JSON.parse(e.target.result);
+            loadNetwork();
+        }
+        fr.readAsText(files.item(0));
+    }
+
+    function loadTestMap() {
+        map = JSON.parse(JSON.stringify(testMap));
+        loadNetwork();
+    }
+
+    function clearMap() {
+        papers = new vis.DataSet([]);
+        refs = new vis.DataSet([]);
+    }
+
+    function loadNetwork() {
+        clearMap();
+        for (paperIndex in map.papers) {
+            var paper = map.papers[Number(paperIndex)]
+            addPaperToNetwork(paper);
+        }
+
+        for (refIndex in map.refs) {
+            refs.add({id: map.refs[Number(refIndex)].id, from: map.refs[Number(refIndex)].from, to: map.refs[Number(refIndex)].to, arrows:'to'})
+        }
+
+        // create a network
+        var container = document.getElementById('mynetwork');
+
+        // provide the data in the vis format
+        var data = {
+            nodes: papers,
+            edges: refs
+        };
+
+        var options = {
+            autoResize: true,
+            height: '100%',
+            width: '100%',
+            edges: {
+                smooth: false
+            },
+            physics: {
+                hierarchicalRepulsion: {
+                centralGravity: 0,
+                springConstant: 0,
+                nodeDistance: 350,
+                damping: 1
+            },
+                maxVelocity: 13,
+                minVelocity: 0.5,
+                solver: "hierarchicalRepulsion"
+            },
+            groups: {
+                papers: {
+                     shape: 'box',
+                     widthConstraint: 200,
+                     font: {multi: 'md', color: '#ffffff'},
+                     color: {background: '#333333', border: '#D0006E'}
+                },
+                papers_unread: {
+                     shape: 'box',
+                     widthConstraint: 200,
+                     font: {multi: 'md', color: '#aaaaaa'},
+                     color: {background: '#333333', border: '#00C618'}
+                }
+            },
+            layout:{
+                randomSeed: 2,
+                improvedLayout: true,
+            }
+        };
+        network = new vis.Network(container, data, options);
+
+        network.on("dragEnd", function(params) {
+            paperID = params.nodes[0];
+            selectNode(params);
+        });
+
+        network.on("selectNode", function(params) {
+            selectNode(params);
+        });
+
+        network.on("deselectNode", function(params) {
+            if (params.nodes.length == 0) {
+                currentSelectedNode = "";
+            }
+            clearControls();
+        });
+    }
+
+    document.addEventListener('keydown', function(event) {
+        event = event || window.event;
+        if (event.keyCode == 46) {
+            // Delete key has been pressed
+            deleteSelectedFeature();
+        }
+    })
+</script>
+</body>
+</html>
