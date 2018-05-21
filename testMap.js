@@ -9,6 +9,7 @@ var testMap = {
 			{quote: "I love Japaneese school girls so much I'm thinking about moving there" },
 			{quote: "It's actually not autonomous, I just sit out of view of the cameras with the controller" }
 		],
+		link: "http://google.com",
 		read: true
 	},
 	{
@@ -20,6 +21,7 @@ var testMap = {
 		quotes: [
 			{quote: "The apple packing robot packs 120 fruit per second, replacing an indermined number of labor units" }
 		],
+		link: "http://arstechnica.com",
 		read: true
 	},
 	{
@@ -31,6 +33,7 @@ var testMap = {
 		quotes: [
 			{quote: "Yeah, I think I'll need 16 cameras to do that" }
 		],
+		link: "http://anandtech.com",
 		read: true
 	},
 	{
@@ -42,6 +45,7 @@ var testMap = {
 		quotes: [
 			{quote: "I should have just made it 1.5 m high" }
 		],
+		link: "http://reddit.com",
 		read: true
 	},
 	{
@@ -53,6 +57,7 @@ var testMap = {
 		quotes: [
 			{quote: "I always clean up after myself, why doesn't everyone else?" }
 		],
+		link: "http://youtube.com",
 		read: true
 	},
 	{
@@ -63,6 +68,7 @@ var testMap = {
 		notes: "",
 		quotes: [
 		],
+		link: "http://wikipedia.org",
 		read: false
 	},
 	{
@@ -73,6 +79,7 @@ var testMap = {
 		notes: "",
 		quotes: [
 		],
+		link: "http://visjs.org",
 		read: false
 	}
 	],
