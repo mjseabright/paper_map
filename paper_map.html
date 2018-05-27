@@ -82,19 +82,23 @@
         var index = map.papers.findIndex(function(item, i){
             return item.id === paperID;
         });
-        var paperToEdit = map.papers[index];
-        document.getElementById("id").value = paperToEdit.id;
-        document.getElementById("title").value = paperToEdit.title;
-        document.getElementById("year").value = paperToEdit.year;
-        document.getElementById("authors").value = paperToEdit.authors;
-        document.getElementById("notes").value = paperToEdit.notes;
-        document.getElementById("quotes").value = "";
-        for (quoteIndex in paperToEdit.quotes) {
-            document.getElementById("quotes").value += paperToEdit.quotes[quoteIndex].quote + "\n";
+        if (paperID != undefined) {
+            var paperToEdit = map.papers[index];
+            document.getElementById("id").value = paperToEdit.id;
+            document.getElementById("title").value = paperToEdit.title;
+            document.getElementById("year").value = paperToEdit.year;
+            document.getElementById("authors").value = paperToEdit.authors;
+            document.getElementById("notes").value = paperToEdit.notes;
+            document.getElementById("quotes").value = "";
+            for (quoteIndex in paperToEdit.quotes) {
+                document.getElementById("quotes").value += paperToEdit.quotes[quoteIndex].quote + "\n";
+            }
+            document.getElementById("read").checked = paperToEdit.read;
+            document.getElementById("link").value = paperToEdit.link;
+            currentSelectedNode = paperID;
+        } else {
+            currentSelectedNode = "";
         }
-        document.getElementById("read").checked = paperToEdit.read;
-        document.getElementById("link").value = paperToEdit.link;
-        currentSelectedNode = paperID;
     }
 
     function saveNode() {
@@ -314,9 +318,11 @@
             var index = map.papers.findIndex(function(item, i){
                 return item.id === paperID;
             });
-            var paper = map.papers[index];
-            var win = window.open(paper.link, '_blank');
-            win.focus();
+            if (paperID != undefined) {
+                var paper = map.papers[index];
+                var win = window.open(paper.link, '_blank');
+                win.focus();
+            }
         });
     }
 
