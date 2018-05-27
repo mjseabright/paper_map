@@ -141,21 +141,24 @@
         selectedPapers = network.getSelectedNodes();
         selectedRefs = network.getSelectedEdges();
 
-        for (paperIndex in selectedPapers) {
-            var index = map.papers.findIndex(function(item, i){
-                return item.id === selectedPapers[paperIndex];
-            });
-            map.papers.splice(index, 1);
-        }
+        if (selectedPapers.length > 0 || selectedRefs.length > 0) {
+            for (paperIndex in selectedPapers) {
+                var index = map.papers.findIndex(function(item, i){
+                    return item.id === selectedPapers[paperIndex];
+                });
+                map.papers.splice(index, 1);
+                clearControls();
+            }
 
-        for (refIndex in selectedRefs) {
-            var index = map.refs.findIndex(function(item, i){
-                return item.id === selectedRefs[refIndex];
-            });
-            map.refs.splice(index, 1);
+            for (refIndex in selectedRefs) {
+                var index = map.refs.findIndex(function(item, i){
+                    return item.id === selectedRefs[refIndex];
+                });
+                map.refs.splice(index, 1);
+            }
+            network.deleteSelected();
+
         }
-        network.deleteSelected();
-        clearControls();
     }
 
     function clearControls() {
