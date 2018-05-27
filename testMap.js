@@ -53,7 +53,7 @@ var testMap = {
 		title: "How to be a Model Employee",
 		authors: "J. Howarth",
 		year: "2018",
-		notes: "This guy seems pretty desperate to impress. He's using all the business lingo and stuff, but I think everyone would just find him annoying.",
+		notes: "He seems to be a little bit of a suck up. But he probably gets paid way more than I do so who am I to criticise?",
 		quotes: [
 			{quote: "I always clean up after myself, why doesn't everyone else?" }
 		],
